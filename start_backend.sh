@@ -1,31 +1,16 @@
 #!/bin/bash
-# Start backend on port 8001
+# Render deployment script
 
+# Install dependencies
+pip install --upgrade pip
+pip install -r backend/requirements.txt
+
+# Preprocess knowledge base if needed
 cd backend
-
-# Check if virtual environment exists
-if [ ! -d ".venv" ]; then
-    echo "Creating virtual environment..."
-    python3 -m venv .venv
-fi
-
-# Activate virtual environment
-source .venv/bin/activate
-
-# Install dependencies if needed
-if [ ! -f ".venv/installed" ]; then
-    echo "Installing dependencies..."
-    pip install -r requirements.txt
-    touch .venv/installed
-fi
-
-# Check if knowledge base is preprocessed
 if [ ! -d "app/data/embeddings" ]; then
-    echo "⚠️  Warning: Knowledge base not preprocessed!"
-    echo "Run: python preprocess_kb.py"
-    echo ""
+    echo "Preprocessing knowledge base..."
+    python preprocess_kb.py
 fi
 
-# Start server on port 8001
-echo "🚀 Starting backend on http://localhost:8001"
-uvicorn app.main:app --reload --port 8001
+# Start server with gunicorn for production
+gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000}

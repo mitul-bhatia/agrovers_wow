@@ -96,8 +96,9 @@ export const ComprehensiveSoilReport: React.FC<ComprehensiveSoilReportProps> = (
 
   const handleDownload = async () => {
     try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
       const response = await fetch(
-        `http://localhost:8001/api/reports/download/${sessionId}/pdf?language=${language}`
+        `${API_BASE}/api/reports/download/${sessionId}/pdf?language=${language}`
       );
       
       if (!response.ok) {

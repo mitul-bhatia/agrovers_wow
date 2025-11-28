@@ -31,13 +31,22 @@ app = FastAPI(
 )
 
 # Configure CORS - MUST be before routes
-# Allow all origins in development for easier testing
+# Allow Vercel and local development
+allowed_origins = [
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000",  # Alternative dev port
+    "https://*.vercel.app",   # Vercel preview deployments
+    "https://your-app.vercel.app",  # Your production Vercel URL (update this)
+]
+
+# In production, allow all origins for easier deployment
+# You can restrict this later by updating allowed_origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins in development
+    allow_origins=["*"],  # Allow all origins (change to allowed_origins for stricter control)
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
     expose_headers=["*"],
     max_age=3600,
 )

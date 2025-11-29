@@ -96,7 +96,7 @@ export const ComprehensiveSoilReport: React.FC<ComprehensiveSoilReportProps> = (
 
   const handleDownload = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001';
+      const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'https://agrovers-wow.onrender.com';
       const response = await fetch(
         `${API_BASE}/api/reports/download/${sessionId}/pdf?language=${language}`
       );

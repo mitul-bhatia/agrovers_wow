@@ -1,0 +1,18 @@
+═══════════════════════════════════════════════════════════════
+COPY THESE EXACT COMMANDS TO RENDER DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Build Command:
+───────────────────────────────────────────────────────────────
+pip install -r backend/requirements.txt
+───────────────────────────────────────────────────────────────
+
+Start Command:
+───────────────────────────────────────────────────────────────
+cd backend && gunicorn app.main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+───────────────────────────────────────────────────────────────
+
+IMPORTANT: Do NOT include "python preprocess_kb.py" in build!
+The embeddings are already in git.
+
+═══════════════════════════════════════════════════════════════

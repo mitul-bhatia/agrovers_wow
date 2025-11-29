@@ -5,9 +5,9 @@ services:
     region: oregon
     plan: free
     branch: main
-    # OPTIMIZED: No preprocessing in build (files already committed)
+    # FIXED: No preprocessing - embeddings already committed
     buildCommand: "pip install -r backend/requirements.txt"
-    # OPTIMIZED: 1 worker instead of 2 to save memory
+    # FIXED: 1 worker to save memory
     startCommand: "cd backend && gunicorn app.main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION

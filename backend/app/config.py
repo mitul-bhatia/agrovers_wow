@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     
     # API Configuration - use private field name to avoid env parsing
     _allowed_origins: list[str] | None = None
+    api_base_url: str = "http://localhost:8001"  # Base URL for API (used for audio URLs)
     
     # Session Configuration
     session_timeout_seconds: int = 3600  # 1 hour

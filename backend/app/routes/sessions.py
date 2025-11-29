@@ -30,6 +30,7 @@ from ..services.llm_adapter import LLMAdapter
 # n8n removed - using direct LLM report generation
 from ..services.stt_service import create_stt_service
 from ..services.tts_service import create_tts_service
+from ..config import settings
 
 router = APIRouter(prefix="/api/v1/session", tags=["sessions"])
 
@@ -94,7 +95,7 @@ async def start_session(request: StartSessionRequest) -> StartSessionResponse:
     audio_url = ""
     try:
         audio_path = tts_service.synthesize(question, request.language)
-        audio_url = tts_service.get_audio_url(audio_path, base_url="http://localhost:8001")
+        audio_url = tts_service.get_audio_url(audio_path, base_url=settings.api_base_url)
         print(f"✓ TTS generated for first question: {audio_url}")
     except Exception as e:
         print(f"✗ TTS error for first question: {e}")

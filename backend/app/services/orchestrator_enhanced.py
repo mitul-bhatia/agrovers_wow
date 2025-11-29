@@ -31,6 +31,7 @@ from .stt_service import STTService, ASRResult
 from .tts_service import TTSService
 from .answer_extractor import get_answer_extractor
 from .intent_classifier import get_intent_classifier
+from ..config import settings
 
 
 # Confidence weights for fusion
@@ -274,7 +275,7 @@ def handle_user_message_enhanced(
     if tts_service and helper_text:
         try:
             audio_path = tts_service.synthesize(helper_text, language)
-            audio_url = tts_service.get_audio_url(audio_path)
+            audio_url = tts_service.get_audio_url(audio_path, base_url=settings.api_base_url)
         except Exception as e:
             print(f"✗ TTS error: {e}")
     
@@ -324,7 +325,7 @@ def _auto_fill_and_advance(
             print(f"🔊 Generating TTS for {next_param}: '{next_question[:50]}...'")
             try:
                 audio_path = tts_service.synthesize(next_question, language)
-                audio_url = tts_service.get_audio_url(audio_path)
+                audio_url = tts_service.get_audio_url(audio_path, base_url=settings.api_base_url)
                 print(f"✓ TTS generated: {audio_url}")
             except Exception as e:
                 print(f"✗ TTS error: {e}")
@@ -499,7 +500,7 @@ def _create_error_response(
     if tts_service:
         try:
             audio_path = tts_service.synthesize(helper_text, language)
-            audio_url = tts_service.get_audio_url(audio_path)
+            audio_url = tts_service.get_audio_url(audio_path, base_url=settings.api_base_url)
         except:
             pass
     

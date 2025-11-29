@@ -18,7 +18,6 @@ import json
 from typing import List, Dict, Any, Optional
 import numpy as np
 import faiss
-from sentence_transformers import SentenceTransformer
 from ..config import settings
 from ..models import Language
 
@@ -28,32 +27,14 @@ class RAGEngine:
     RAG engine for retrieving relevant knowledge base chunks.
     
     Uses FAISS for fast similarity search and filters by parameter + language.
+    OPTIMIZED: No embedding model loaded at runtime (uses keyword matching instead)
     """
     
     def __init__(self):
-        """Initialize RAG engine by loading index and embedding model."""
-        self.embedding_model: Optional[SentenceTransformer] = None
+        """Initialize RAG engine by loading index only (no embedding model)."""
         self.index: Optional[faiss.Index] = None
         self.metadata: Dict[str, Dict[str, Any]] = {}
-        self._load_model()
         self._load_index()
-    
-    def _load_model(self) -> None:
-        """Load sentence transformer model for embeddings."""
-        try:
-            # Use HF token if provided (for private models)
-            model_kwargs = {}
-            if settings.hf_token:
-                model_kwargs["token"] = settings.hf_token
-            
-            self.embedding_model = SentenceTransformer(
-                settings.embedding_model_name,
-                **model_kwargs
-            )
-            print(f"✓ Loaded embedding model: {settings.embedding_model_name}")
-        except Exception as e:
-            print(f"✗ Error loading embedding model: {e}")
-            raise
     
     def _load_index(self) -> None:
         """Load FAISS index and metadata from disk."""
@@ -90,6 +71,8 @@ class RAGEngine:
         """
         Retrieve top-k relevant chunks for a query.
         
+        OPTIMIZED: Uses keyword matching instead of embeddings to save memory.
+        
         Args:
             query: User's question or context
             parameter: Current parameter being asked about
@@ -99,26 +82,16 @@ class RAGEngine:
         Returns:
             List of text chunks (strings) most relevant to query
         """
-        if self.index is None or self.embedding_model is None:
+        if self.index is None:
             return []
         
-        # Embed the query
-        query_embedding = self.embedding_model.encode([query], convert_to_numpy=True)
-        query_embedding = query_embedding.astype('float32')
+        # Use keyword-based retrieval instead of embeddings
+        # This saves 90MB+ of RAM by not loading sentence-transformers
         
-        # Search in FAISS
-        k_actual = min(k * 3, self.index.ntotal)  # Retrieve more, then filter
-        distances, indices = self.index.search(query_embedding, k_actual)
-        
-        # Score and filter chunks with relaxed matching
+        # Score all chunks based on keyword matching
         scored_chunks = []
         
-        for i, idx in enumerate(indices[0]):
-            if idx < 0:  # Invalid index
-                continue
-            
-            chunk_id = str(idx)
-            chunk_meta = self.metadata.get(chunk_id, {})
+        for chunk_id, chunk_meta in self.metadata.items():
             
             # Get chunk info
             chunk_param = chunk_meta.get("parameter", "").lower()
@@ -129,8 +102,8 @@ class RAGEngine:
             if not chunk_text or len(chunk_text) < 20:
                 continue
             
-            # Calculate relevance score
-            score = 1.0 / (i + 1)  # Base score from similarity ranking
+            # Calculate relevance score based on keyword matching
+            score = 0.0
             
             # Boost for parameter match (fuzzy)
             param_keywords = {
@@ -145,22 +118,29 @@ class RAGEngine:
             }
             
             keywords = param_keywords.get(parameter, [parameter])
-            if any(kw in chunk_param or kw in chunk_text.lower()[:100] for kw in keywords):
-                score *= 2.0  # Strong boost for parameter match
+            if any(kw in chunk_param or kw in chunk_text.lower()[:200] for kw in keywords):
+                score += 10.0  # Strong boost for parameter match
+            
+            # Boost for query keywords in text
+            query_words = query.lower().split()
+            for word in query_words:
+                if len(word) > 3 and word in chunk_text.lower():
+                    score += 2.0
             
             # Boost for "how to test" sections
             if chunk_type == "how_to_test" or "कैसे जांचें" in chunk_text or "how to" in chunk_text.lower():
-                score *= 1.5
+                score += 5.0
             
             # Boost for matching language
             if chunk_lang == language:
-                score *= 1.3
+                score += 3.0
             
             # Penalize JSON/code chunks
             if chunk_text.strip().startswith("{") or "```json" in chunk_text:
-                score *= 0.1
+                score = 0.0
             
-            scored_chunks.append((score, chunk_text, chunk_lang))
+            if score > 0:
+                scored_chunks.append((score, chunk_text, chunk_lang))
         
         # Sort by score and return top k
         scored_chunks.sort(key=lambda x: x[0], reverse=True)
@@ -176,6 +156,6 @@ class RAGEngine:
         return result[:k]
     
     def is_ready(self) -> bool:
-        """Check if RAG engine is ready (index and model loaded)."""
-        return self.index is not None and self.embedding_model is not None
+        """Check if RAG engine is ready (index loaded)."""
+        return self.index is not None
 

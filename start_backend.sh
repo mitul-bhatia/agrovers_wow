@@ -1,16 +1,14 @@
 #!/bin/bash
-# Render deployment script
+# Optimized backend startup for Render (memory-efficient)
 
-# Install dependencies
-pip install --upgrade pip
-pip install -r backend/requirements.txt
-
-# Preprocess knowledge base if needed
 cd backend
-if [ ! -d "app/data/embeddings" ]; then
-    echo "Preprocessing knowledge base..."
-    python preprocess_kb.py
-fi
 
-# Start server with gunicorn for production
-gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000}
+# Start server with minimal workers to save memory
+# Using 1 worker instead of 2 to stay under 512MB limit
+gunicorn app.main:app \
+  --workers 1 \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --bind 0.0.0.0:${PORT:-8000} \
+  --timeout 120 \
+  --max-requests 1000 \
+  --max-requests-jitter 50

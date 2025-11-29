@@ -34,12 +34,14 @@ yarn-error.log*
 frontend/dist/
 frontend/.vite/
 
-# Data files (large)
-backend/app/data/embeddings/*.faiss
-backend/app/data/embeddings/*.pkl
-backend/app/data/kb_processed/*.jsonl
+# Data files - Audio only (embeddings and processed KB should be committed!)
 backend/app/data/audio/*.mp3
 backend/app/data/audio/*.wav
+
+# Note: We WANT to commit these files for deployment:
+# backend/app/data/embeddings/*.faiss
+# backend/app/data/embeddings/*.pkl
+# backend/app/data/kb_processed/*.jsonl
 
 # OS
 .DS_Store

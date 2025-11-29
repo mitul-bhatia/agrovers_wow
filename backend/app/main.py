@@ -14,7 +14,7 @@ To change LLM provider:
     Update llm_provider in config.py and set corresponding API key
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
@@ -22,6 +22,7 @@ from .config import settings
 from .routes import sessions, reports
 from .services.rag_engine import RAGEngine
 from .services.llm_adapter import create_llm_adapter
+import os
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -30,10 +31,30 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Middleware to set base URL from request
+@app.middleware("http")
+async def set_base_url_middleware(request: Request, call_next):
+    """Automatically detect and set the base URL from the request."""
+    # Get the base URL from the request
+    scheme = request.url.scheme
+    host = request.headers.get("host", request.url.netloc)
+    base_url = f"{scheme}://{host}"
+    
+    # Override settings if not explicitly set or if it's localhost
+    if settings.api_base_url == "http://localhost:8001" or "localhost" in settings.api_base_url:
+        # Only override if we're not actually on localhost
+        if "localhost" not in host and "127.0.0.1" not in host:
+            os.environ["API_BASE_URL"] = base_url
+            settings.api_base_url = base_url
+    
+    response = await call_next(request)
+    return response
+
 # Configure CORS - MUST be before routes
 # Allow Vercel and local development
 allowed_origins = [
     "http://localhost:5173",  # Vite dev server
+    "http://localhost:5174",  # Vite dev server (alt)
     "http://localhost:3000",  # Alternative dev port
     "https://*.vercel.app",   # Vercel preview deployments
     "https://your-app.vercel.app",  # Your production Vercel URL (update this)
@@ -68,6 +89,7 @@ async def startup_event():
     global rag_engine, llm_adapter
     
     print("🚀 Starting Argovers Soil Assistant...")
+    print(f"📍 API Base URL: {settings.api_base_url}")
     
     # Initialize RAG engine
     try:

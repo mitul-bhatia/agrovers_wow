@@ -1,5 +1,5 @@
-# 🌱 Agrovers - AI-Powered Soil Testing Assistant
 
+# 🌱 Agrovers - AI-Powered Soil Testing Assistant
 An intelligent conversational assistant that helps Indian farmers test their soil at home using simple household methods. Built with FastAPI, React, and powered by RAG (Retrieval-Augmented Generation) and multiple LLM providers.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-green)
